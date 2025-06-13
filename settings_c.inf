@@ -1,0 +1,19 @@
+[Server]
+host = localhost
+port = 5000
+reconnect_interval = 5
+
+[Process]
+name = TOTALCMD64.EXE
+path = C:/Program Files/TOTALCMD/TOTALCMD64.EXE
+restart_delay = 5
+
+[Logging]
+log_path = ${USERPROFILE}/Documents/ekiller/log.log
+rotation = 1 day
+retention = 7 days
+
+[Splash]
+duration = 2000
+logo_path = logo.png
+logo_size = 300 
