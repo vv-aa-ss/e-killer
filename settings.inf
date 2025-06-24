@@ -4,7 +4,7 @@ port = 5000
 reconnect_interval = 5
 
 [Process]
-defaultpath = C:/Program Files/TOTALCMD/TOTALCMD64.EXE
+defaultpath = C:\portable\Total Commander 9.51 Portable by PortableAppZ x86x64\x64\App\TotalCommander\/TOTALCMD64.EXE
 restart_delay = 5
 
 [Logging]

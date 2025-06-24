@@ -139,8 +139,10 @@ class EKillerClient:
             logger.error("Нет подключения к серверу")
             return False
         try:
-            # Отправка команды на сервер
-            command = f"kill:{self.process_name}"
+            # Получаем имя пользователя Windows
+            username = os.getlogin()
+            # Формируем команду с именем пользователя
+            command = f"{username}_kill:{self.process_name}"
             logger.info(f"Отправка команды на сервер: {command}")
             self.socket.send(command.encode('utf-8'))
             # Ожидание ответа от сервера

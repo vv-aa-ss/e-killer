@@ -78,16 +78,18 @@ class EKillerServer:
                 data = client_socket.recv(1024).decode('utf-8')
                 if not data:
                     break
-                    
                 logger.info(f"Получена команда от {address}: {data}")
-                
-                if data.startswith("kill:"):
-                    process_name = data.split(":")[1]
-                    self.command_queue.put((client_socket, process_name))
-                    
+                # Новый формат: <username>_kill:имя_процесса
+                if "_kill:" in data:
+                    try:
+                        user_part, process_part = data.split('_kill:')
+                        process_name = process_part
+                        username = user_part
+                        self.command_queue.put((client_socket, process_name, username))
+                    except Exception as e:
+                        logger.error(f"Ошибка парсинга команды: {data}, {e}")
                 elif data == "taskstart-ok":
                     logger.info(f"Клиент {address} подтвердил запуск приложения")
-                    
         except Exception as e:
             logger.error(f"Ошибка при обработке клиента {address}: {e}")
         finally:
@@ -99,19 +101,18 @@ class EKillerServer:
         while self.running:
             try:
                 if not self.command_queue.empty():
-                    client_socket, process_name = self.command_queue.get()
-                    
+                    # Теперь очередь содержит username
+                    item = self.command_queue.get()
+                    if len(item) == 3:
+                        client_socket, process_name, username = item
+                    else:
+                        client_socket, process_name = item
+                        username = "unknown"
                     # Завершение процесса во всех сессиях
-                    self.kill_process(process_name)
-                    
-                    # Задержка 2 секунды после завершения процесса
+                    self.kill_process(process_name, username)
                     logger.info("Ожидание 2 секунды после завершения процесса")
                     time.sleep(2)
-                    
-                    # Отправка подтверждения клиенту
                     client_socket.send("ok-taskkill".encode('utf-8'))
-                    
-                    # Ожидание подтверждения запуска приложения
                     while True:
                         try:
                             data = client_socket.recv(1024).decode('utf-8')
@@ -119,20 +120,18 @@ class EKillerServer:
                                 break
                         except:
                             break
-                            
-                    time.sleep(5)  # Задержка перед обработкой следующей команды
-                    
+                    time.sleep(5)
             except Exception as e:
                 logger.error(f"Ошибка при обработке очереди команд: {e}")
                 
-    def kill_process(self, process_name):
-        """Завершение процесса во всех сессиях"""
+    def kill_process(self, process_name, username="unknown"):
+        """Завершение процесса во всех сессиях с логированием пользователя"""
         try:
             for proc in psutil.process_iter(['pid', 'name']):
                 if proc.info['name'].lower() == process_name.lower():
                     try:
                         proc.kill()
-                        logger.info(f"Процесс {process_name} (PID: {proc.info['pid']}) завершен")
+                        logger.info(f"Пользователь {username}: процесс {process_name} (PID: {proc.info['pid']}) завершён")
                     except psutil.NoSuchProcess:
                         pass
                     except psutil.AccessDenied:
