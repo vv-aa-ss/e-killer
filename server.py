@@ -5,9 +5,19 @@ import time
 from loguru import logger
 import psutil
 import os
+import configparser
 
 class EKillerServer:
-    def __init__(self, host='127.0.0.1', port=5000):
+    def __init__(self, config_path='settings.inf'):
+        # Чтение настроек
+        config = configparser.ConfigParser()
+        if os.path.exists(config_path):
+            config.read(config_path)
+            host = config.get('Server', 'host', fallback='127.0.0.1')
+            port = config.getint('Server', 'port', fallback=5000)
+        else:
+            host = '127.0.0.1'
+            port = 5000
         self.host = host
         self.port = port
         self.server_socket = None
@@ -131,7 +141,7 @@ class EKillerServer:
             logger.error(f"Ошибка при завершении процесса {process_name}: {e}")
 
 if __name__ == "__main__":
-    server = EKillerServer()
+    server = EKillerServer('settings.inf')
     try:
         server.start()
     except KeyboardInterrupt:
