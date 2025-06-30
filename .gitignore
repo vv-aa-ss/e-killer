@@ -18,4 +18,9 @@ ENV/
 # Windows
 Thumbs.db
 ehthumbs.db
-Desktop.ini 
+Desktop.ini
+
+output/
+
+# Executables
+*.exe 
