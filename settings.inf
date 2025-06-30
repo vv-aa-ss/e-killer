@@ -4,12 +4,12 @@ port = 5000
 reconnect_interval = 5
 
 [Process]
-defaultpath = C:\portable\Total Commander 9.51 Portable by PortableAppZ x86x64\x64\App\TotalCommander\/TOTALCMD64.EXE
+defaultpath = C:\Windows\notepad.exe
 restart_delay = 5
 
 [Logging]
-log_path = ${USERPROFILE}/Documents/ekiller/log.log
-rotation = 1 day
+log_path = ${USERPROFILE}/ekiller/log.log
+rotation = 7 day
 retention = 7 days
 
 [Splash]
