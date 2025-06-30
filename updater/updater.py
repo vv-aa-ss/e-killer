@@ -19,20 +19,18 @@ def get_remote_versions():
     resp = requests.get(url, timeout=10)
     return json.loads(resp.text)
 
-def download_new_exe(exe_name):
-    url = f"{UPDATE_SERVER.rstrip('/')}/{exe_name.lstrip('/')}"
+def download_new_exe(exe_name, config):
+    # Получаем имя файла и добавляем remote_path_prefix, если есть
+    remote_prefix = config.get("remote_path_prefix", "")
+    url = f"{UPDATE_SERVER.rstrip('/')}/{remote_prefix.strip('/')}/{exe_name}"
     print(f"Скачиваю: {url}")
 
     resp = requests.get(url, stream=True, timeout=30)
     print(f"HTTP статус: {resp.status_code} {resp.reason}")
-
     if resp.status_code != 200:
         raise Exception(f"Ошибка загрузки: {resp.status_code} {resp.reason}")
 
-    exe_base = os.path.basename(exe_name)
-    current_dir = os.path.dirname(__file__)
-    new_name = os.path.join(current_dir, exe_base.replace('.exe', '_new.exe'))
-
+    new_name = os.path.join(os.path.dirname(__file__), exe_name.replace('.exe', '_new.exe'))
     print(f"Будет сохранён как: {new_name}")
 
     with open(new_name, "wb") as f:
@@ -53,7 +51,7 @@ def update_client(config, remote_versions):
 
     if remote_ver and remote_ver != local_ver:
         print(f"Доступно обновление клиента: {local_ver} -> {remote_ver}")
-        new_name = download_new_exe(exe_name)
+        new_name = download_new_exe(exe_name, config)
         print(f"Заменяю {exe_path} ← {new_name}")
         os.replace(new_name, exe_path)
         print("Клиент обновлён. Перезапуск...")
