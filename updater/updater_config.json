@@ -1,6 +1,6 @@
 {
-  "client_exe": "/Killer_Client.exe",
-  "server_exe": "/Killer_Server.exe",
+  "client_exe": "Ekiller/Killer_Client.exe",
+  "server_exe": "Ekiller/Killer_Server.exe",
   "server_service_name": "BITS - Ekiller",
   "local_client_version": "1.0.1",
   "local_server_version": "1.0.0"

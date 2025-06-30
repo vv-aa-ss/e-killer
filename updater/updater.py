@@ -20,13 +20,49 @@ def get_remote_versions():
     return json.loads(resp.text)
 
 def download_new_exe(exe_name):
-    url = UPDATE_SERVER + exe_name
+    url = f"{UPDATE_SERVER.rstrip('/')}/{exe_name.lstrip('/')}"
+    print(f"Скачиваю: {url}")
+
     resp = requests.get(url, stream=True, timeout=30)
-    new_name = os.path.join(os.path.dirname(__file__), exe_name.replace('.exe', '_new.exe'))
+    print(f"HTTP статус: {resp.status_code} {resp.reason}")
+
+    if resp.status_code != 200:
+        raise Exception(f"Ошибка загрузки: {resp.status_code} {resp.reason}")
+
+    exe_base = os.path.basename(exe_name)
+    current_dir = os.path.dirname(__file__)
+    new_name = os.path.join(current_dir, exe_base.replace('.exe', '_new.exe'))
+
+    print(f"Будет сохранён как: {new_name}")
+
     with open(new_name, "wb") as f:
         shutil.copyfileobj(resp.raw, f)
         print("Копирование новой версии завершено")
+
     return new_name
+
+
+def update_client(config, remote_versions):
+    local_ver = config["local_client_version"]
+    remote_ver = remote_versions.get("client")
+    exe_name = config["client_exe"]
+    current_dir = os.path.dirname(__file__)
+    exe_path = os.path.abspath(os.path.join(current_dir, exe_name))
+
+    print(f"Ожидаемый путь к текущему .exe: {exe_path}")
+
+    if remote_ver and remote_ver != local_ver:
+        print(f"Доступно обновление клиента: {local_ver} -> {remote_ver}")
+        new_name = download_new_exe(exe_name)
+        print(f"Заменяю {exe_path} ← {new_name}")
+        os.replace(new_name, exe_path)
+        print("Клиент обновлён. Перезапуск...")
+        subprocess.Popen([exe_path] + sys.argv[1:])
+        sys.exit(0)
+    else:
+        print("Обновление клиента не требуется.")
+
+
 
 def replace_exe(exe_name, new_name):
     exe_path = os.path.abspath(exe_name)
@@ -38,20 +74,6 @@ def restart_service(service_name):
     time.sleep(3)
     # Запускаем службу
     subprocess.run(["sc", "start", service_name], check=False)
-
-def update_client(config, remote_versions):
-    local_ver = config["local_client_version"]
-    remote_ver = remote_versions.get("client")
-    exe_name = config["client_exe"]
-    if remote_ver and remote_ver != local_ver:
-        print(f"Доступно обновление клиента: {local_ver} -> {remote_ver}")
-        new_name = download_new_exe(exe_name)
-        replace_exe(exe_name, new_name)
-        print("Клиент обновлён. Перезапуск...")
-        subprocess.Popen([exe_name] + sys.argv[1:])
-        sys.exit(0)
-    else:
-        print("Обновление клиента не требуется.")
 
 def update_server(config, remote_versions):
     local_ver = config["local_server_version"]
