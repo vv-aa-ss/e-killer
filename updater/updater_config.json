@@ -1,4 +1,5 @@
 {
+    "update_server": "http://127.0.0.1:54321",
     "client_exe": "Killer_Client.exe",
     "server_exe": "Killer_Server.exe",
     "remote_path_prefix": "EKiller/",

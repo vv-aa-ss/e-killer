@@ -8,7 +8,6 @@ import time
 import logging
 
 CONFIG_PATH = os.path.join(os.path.dirname(__file__), 'updater_config.json')
-UPDATE_SERVER = "http://192.168.87.3:54321"
 
 """Логирование"""
 LOG_PATH = os.path.join(os.path.dirname(__file__), 'updater.log')
@@ -30,15 +29,16 @@ def load_config():
     with open(CONFIG_PATH, 'r', encoding='utf-8') as f:
         return json.load(f)
 
-def get_remote_versions():
-    url = UPDATE_SERVER + "/versions.json"
+def get_remote_versions(config):
+    update_server = config["update_server"]
+    url = update_server.rstrip('/') + "/versions.json"
     resp = requests.get(url, timeout=10)
     return json.loads(resp.text)
 
 def download_new_exe(exe_name, config):
-    # Получаем имя файла и добавляем remote_path_prefix, если есть
+    update_server = config["update_server"]
     remote_prefix = config.get("remote_path_prefix", "")
-    url = f"{UPDATE_SERVER.rstrip('/')}/{remote_prefix.strip('/')}/{exe_name}"
+    url = f"{update_server.rstrip('/')}/{remote_prefix.strip('/')}/{exe_name}"
     logger.info(f"Скачиваю: {url}")
 
     resp = requests.get(url, stream=True, timeout=30)
@@ -138,7 +138,7 @@ def main():
     try:
         config = load_config()
         # check_update_flag_and_patch_config(config)
-        remote_versions = get_remote_versions()
+        remote_versions = get_remote_versions(config)
         logger.info("Проверяю обновления...")
         update_client(config, remote_versions)
         update_server(config, remote_versions)
