@@ -7,10 +7,17 @@ import json
 import time
 import logging
 
-CONFIG_PATH = os.path.join(os.path.dirname(__file__), 'updater_config.json')
+if getattr(sys, 'frozen', False):
+    # Если запущено из exe
+    BASE_DIR = os.path.dirname(sys.executable)
+else:
+    # Если запущено как скрипт
+    BASE_DIR = os.path.dirname(__file__)
+
+CONFIG_PATH = os.path.join(BASE_DIR, 'updater_config.json')
 
 """Логирование"""
-LOG_PATH = os.path.join(os.path.dirname(__file__), 'updater.log')
+LOG_PATH = os.path.join(BASE_DIR, 'updater.log')
 
 logging.basicConfig(
     level=logging.INFO,
@@ -46,7 +53,7 @@ def download_new_exe(exe_name, config):
     if resp.status_code != 200:
         raise Exception(f"Ошибка загрузки: {resp.status_code} {resp.reason}")
 
-    new_name = os.path.join(os.path.dirname(__file__), exe_name.replace('.exe', '_new.tmp'))
+    new_name = os.path.join(BASE_DIR, exe_name.replace('.exe', '_new.tmp'))
     logger.info(f"Будет сохранён как: {new_name}")
 
     with open(new_name, "wb") as f:
@@ -62,7 +69,7 @@ def update_client(config, remote_versions):
     remote_ver = remote_versions.get("client")
     exe_name = config["client_exe"]
     current_dir = os.path.dirname(__file__)
-    exe_path = os.path.abspath(os.path.join(current_dir, exe_name))
+    exe_path = os.path.abspath(os.path.join(BASE_DIR, exe_name))
 
     logger.info(f"Ожидаемый путь к текущему Клиент.exe: {exe_path}")
 
@@ -82,7 +89,7 @@ def update_server(config, remote_versions):
     exe_name = config["server_exe"]
     service_name = config["server_service_name"]
     current_dir = os.path.dirname(__file__)
-    exe_path = os.path.abspath(os.path.join(current_dir, exe_name))
+    exe_path = os.path.abspath(os.path.join(BASE_DIR, exe_name))
     if remote_ver != local_ver:
         logger.info(f"Доступно обновление сервера: {local_ver} -> {remote_ver}")
         new_name = download_new_exe(exe_name, config)
@@ -137,14 +144,21 @@ def replace_exe(exe_name, new_name):
 def main():
     try:
         config = load_config()
-        # check_update_flag_and_patch_config(config)
-        remote_versions = get_remote_versions(config)
-        logger.info("Проверяю обновления...")
-        update_client(config, remote_versions)
-        update_server(config, remote_versions)
-        logger.info("Проверка завершена.")
+        interval_hours = config.get('interval_hours', 1)
+        logger.info(f"Интервал проверки обновлений: {interval_hours} ч.")
+        while True:
+            try:
+                config = load_config()  # перечитываем на случай изменения
+                remote_versions = get_remote_versions(config)
+                logger.info("Проверяю обновления...")
+                update_client(config, remote_versions)
+                update_server(config, remote_versions)
+                logger.info("Проверка завершена. Следующая через %d ч.", interval_hours)
+            except Exception as e:
+                logger.info(f"Ошибка обновления: {e}")
+            time.sleep(interval_hours * 3600)
     except Exception as e:
-        logger.info(f"Ошибка обновления: {e}")
+        logger.info(f"Ошибка запуска updater: {e}")
 
 
 if __name__ == "__main__":
